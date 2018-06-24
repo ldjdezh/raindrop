@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>雨滴效果</title>
+    <style>
+        body {
+            margin: 0;
+        }
+
+        canvas {
+            background-color: #090909;
+            display: block;
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="can" class="rain"></canvas>
+
+    <script>
+        const can = document.querySelector('#can')
+        const ctxPen = can.getContext('2d')
+
+        // w, h是屏幕的宽度和高度
+        let w, h
+
+            // 当屏幕大小改变时，can的大小也跟着变
+            ; (function resize() {
+                window.onresize = arguments.callee
+                w = window.innerWidth
+                h = window.innerHeight
+                can.width = w
+                can.height = h
+            })()
+
+        function getRandom(min, max) {
+            return Math.random() * (max - min) + min
+        }
+
+        /*
+        雨滴类
+        */
+        class Rain {
+            // 构造方法，要把画笔传进来
+            constructor(element) {
+                this.ctx = element.ctx
+            }
+
+            // 初始化一些参数
+            init() {
+                this.x = getRandom(0, w) //x通过随机数得到
+                this.y = 0 //y
+                this.w = 3 //雨滴宽度
+                this.h = 10 //雨滴高度
+                this.color = '#3ff' //颜色
+                this.vh = getRandom(1, 5) //每次下落的速度
+                this.radius = 2 //圆的初始半径
+                this.maxRadius = getRandom(80, 150) //圆的最大半径
+                this.maxY = getRandom(80, 120) //下落底部的距离
+            }
+
+            // 画出雨滴
+            draw() {
+                this.ctx.fillStyle = this.color
+                this.ctx.fillRect(this.x, this.y, this.w, this.h)
+            }
+
+            // 雨滴移动方法
+            move() {
+                // 雨滴超过了下落最大距离，变圆
+                if (this.y > h - this.maxY) {
+                    // 圆的半径超过了最大半径
+                    if (this.radius > this.maxRadius) {
+                        this.init()
+                    } else {
+                        this.ctx.beginPath()
+                        this.ctx.strokeStyle = this.color
+                        this.ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2)
+                        this.ctx.stroke()
+                        this.radius++
+                    }
+                } else {
+                    this.y += this.vh
+                    this.ctx.fillStyle = this.color
+                    this.ctx.fillRect(this.x, this.y, this.w, this.h)
+                }
+            }
+        }
+
+        // 雨滴下落面板
+        class Raindrop {
+            constructor(element) {
+                // 存放生成的所有雨滴
+                this.rains = []
+                // 获得传入的画笔
+                this.ctx = element.ctx
+            }
+
+            // 雨滴动画
+            animation() {
+                setInterval(() => {
+                    // 障眼法，每次移动雨滴之前，先把整块面板，添上一个透明度
+                    this.ctx.fillStyle = 'rgba(0,0,0,0.07)'
+                    this.ctx.fillRect(0, 0, w, h)
+                    for (let i = 0; i < this.rains.length; i++) {
+                        this.rains[i].move()
+                    }
+                }, 1000 / 60)
+            }
+
+            // 根据参数，创建雨滴
+            createRain(num, time) {
+                for (let i = 0; i < num; i++) {
+                    setTimeout(() => {
+                        const rain = new Rain({
+                            ctx: this.ctx
+                        })
+                        rain.init()
+                        rain.draw()
+                        this.rains.push(rain)
+                    }, time * i)
+                }
+            }
+
+            // 整合方法
+            start(num, time) {
+                this.createRain(num, time)
+                this.animation()
+            }
+        }
+
+        const raindrop = new Raindrop({
+            ctx: ctxPen
+        })
+
+        raindrop.start(100, 1000)
+
+    </script>
+</body>
+
+</html>
